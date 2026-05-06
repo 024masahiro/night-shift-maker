@@ -1,1 +1,5 @@
-// App source is loaded by app-part1.js.
+(() => {
+  const style = document.createElement("style");
+  style.textContent = "#csvSaveDir{display:none!important}";
+  document.head.append(style);
+})();
