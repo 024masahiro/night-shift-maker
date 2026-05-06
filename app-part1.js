@@ -1,5 +1,5 @@
 (() => {
-  const version = "20260506-github-pages-gzip";
+  const version = "20260506-save-files";
   const chunkFiles = [
     "app-data-001.txt",
     "app-data-002.txt",
@@ -8,6 +8,7 @@
     "app-data-005.txt",
     "app-data-006.txt",
     "app-data-007.txt",
+    "app-data-008.txt",
   ];
 
   function loadLocalScript() {
