@@ -20,7 +20,10 @@
           </div>
           <button class="secondary-action save-action" id="saveBtn" type="button">保存</button>
           <button class="secondary-action restore-action" id="restoreBtn" type="button">復元</button>
+          <button class="secondary-action export-save-action" id="exportSaveBtn" type="button" title="保存データを書き出し" aria-label="保存データを書き出し">書出</button>
+          <button class="secondary-action import-save-action" id="importSaveBtn" type="button" title="保存データを読み込み" aria-label="保存データを読み込み">読込</button>
           <button class="secondary-action delete-save-action" id="deleteSaveBtn" type="button">削除</button>
+          <input id="saveImportFile" class="visually-hidden-file" type="file" accept="application/json,.json" hidden />
           <button class="icon-button csv-button" id="exportBtn" type="button" title="CSVを書き出し" aria-label="CSVを書き出し">
             <span aria-hidden="true">CSV</span>
           </button>
@@ -217,7 +220,7 @@
       </article>
     </template>
 
-    <script src="./app-part1.js?v=20260506-github-pages"></script>
+    <script src="./app-part1.js?v=20260506-save-files"></script>
     <script src="./app-part2.js?v=20260506-hide-csv"></script>
     <script src="./app-part3.js?v=20260506-github-pages"></script>
     <script src="./app-part4.js?v=20260506-github-pages"></script>
