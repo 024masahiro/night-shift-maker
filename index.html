@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>宿直シフトメーカー</title>
+    <link rel="stylesheet" href="./styles.css?v=20260506-mobile-layout" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand-title">
+          <p class="eyebrow">On-call roster planner</p>
+          <h1>宿直シフトメーカー</h1>
+        </div>
+        <div class="topbar-actions">
+          <div class="save-manager" aria-label="保存データ">
+            <input id="saveName" class="save-name-input" type="text" placeholder="保存名" />
+            <select id="saveSelect" class="save-select" aria-label="保存データを選択"></select>
+          </div>
+          <button class="secondary-action save-action" id="saveBtn" type="button">保存</button>
+          <button class="secondary-action restore-action" id="restoreBtn" type="button">復元</button>
+          <button class="secondary-action delete-save-action" id="deleteSaveBtn" type="button">削除</button>
+          <button class="icon-button csv-button" id="exportBtn" type="button" title="CSVを書き出し" aria-label="CSVを書き出し">
+            <span aria-hidden="true">CSV</span>
+          </button>
+          <select id="csvSaveDir" class="csv-save-dir-select" aria-label="CSV保存先フォルダ">
+            <option value="">CSV保存先: アプリ内 exports</option>
+            <option value="~/Desktop">CSV保存先: デスクトップ</option>
+            <option value="~/Downloads">CSV保存先: ダウンロード</option>
+            <option value="~/Documents">CSV保存先: 書類</option>
+          </select>
+          <button class="primary-action" id="generateBtn" type="button">シフト生成</button>
+          <span id="generationStatus" class="generation-status" role="status" aria-live="polite"></span>
+        </div>
+      </header>
+      <section class="workspace">
+        <aside class="setup-panel" aria-label="シフト条件">
+          <div class="section-header">
+            <h2>条件</h2>
+            <span id="saveStatus" class="status-pill">未保存</span>
+          </div>
+
+          <form id="settingsForm" class="settings-grid">
+            <label>
+              開始日
+              <input id="startDate" name="startDate" type="date" required />
+            </label>
+            <label>
+              終了日
+              <input id="endDate" name="endDate" type="date" required />
+            </label>
+            <label class="reference-ratio-control">
+              平日宿直 A医師:B医師
+              <span class="ratio-input-row">
+                <input id="weekdayReferenceRatio" class="reference-ratio-input" type="number" min="0" max="20" step="0.1" value="1" />
+                <span>:1</span>
+              </span>
+            </label>
+            <label class="reference-ratio-control">
+              土日祝宿日直 A医師:B医師
+              <span class="ratio-input-row">
+                <input id="holidayReferenceRatio" class="reference-ratio-input" type="number" min="0" max="20" step="0.1" value="1" />
+                <span>:1</span>
+              </span>
+            </label>
+            <label class="wide-field">
+              祝日・特別日
+              <textarea id="specialDates" name="specialDates" rows="3" placeholder="2026-05-06, 2026.5.15"></textarea>
+            </label>
+            <label class="wide-field">
+              除外日
+              <textarea id="excludedDates" name="excludedDates" rows="3" placeholder="2026-05-10, 2026.5.20"></textarea>
+            </label>
+          </form>
+
+          <section class="slot-preview" aria-live="polite">
+            <div class="slot-preview-header">
+              <h3>期間内の勤務枠</h3>
+              <span id="slotPreviewRange" class="slot-preview-range">期間未設定</span>
+            </div>
+            <div class="slot-preview-grid">
+              <div class="slot-preview-item">
+                <span>平日宿直</span>
+                <strong id="weekdaySlotCount">0回</strong>
+              </div>
+              <div class="slot-preview-item weekend">
+                <span>土日祝宿日直</span>
+                <strong id="holidaySlotCount">0回</strong>
+              </div>
+            </div>
+            <div class="member-preview">
+              <div class="member-preview-title">所属医師数</div>
+              <div class="member-preview-grid">
+                <div class="member-preview-item group-a">
+                  <span>Aグループ</span>
+                  <strong id="groupAMemberCount">0人</strong>
+                </div>
+                <div class="member-preview-item group-b">
+                  <span>Bグループ</span>
+                  <strong id="groupBMemberCount">0人</strong>
+                </div>
+              </div>
+            </div>
+            <div class="reference-preview">
+              <div class="member-preview-title">期間内の配分目標</div>
+              <div class="reference-preview-grid">
+                <article class="reference-preview-card">
+                  <div class="reference-preview-head">
+                    <span>平日宿直</span>
+                  </div>
+                  <p id="weekdayReferenceExact" class="reference-line">1人あたり目標 A 0回 / B 0回</p>
+                  <p id="weekdayReferenceCandidate" class="reference-line strong">配分比 A:B = 1:1</p>
+                </article>
+                <article class="reference-preview-card">
+                  <div class="reference-preview-head">
+                    <span>土日祝宿日直</span>
+                  </div>
+                  <p id="holidayReferenceExact" class="reference-line">1人あたり目標 A 0回 / B 0回</p>
+                  <p id="holidayReferenceCandidate" class="reference-line strong">配分比 A:B = 1:1</p>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <div class="doctor-tools">
+            <div class="section-header">
+              <h2>医師</h2>
+              <button class="secondary-action" id="addDoctorBtn" type="button">追加</button>
+            </div>
+            <div id="doctorList" class="doctor-list"></div>
+          </div>
+        </aside>
+
+        <section class="results-panel" aria-label="生成結果">
+          <div class="result-tabs" role="tablist" aria-label="表示切り替え">
+            <button class="tab-button active" data-view="schedule" type="button" role="tab" aria-selected="true">日別</button>
+            <button class="tab-button" data-view="summary" type="button" role="tab" aria-selected="false">集計</button>
+            <button class="tab-button" data-view="issues" type="button" role="tab" aria-selected="false">確認</button>
+          </div>
+
+          <div id="scheduleView" class="view active">
+            <div class="table-shell">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日付</th>
+                    <th>区分</th>
+                    <th>勤務</th>
+                    <th>グループ</th>
+                    <th>医師</th>
+                    <th>メモ</th>
+                  </tr>
+                </thead>
+                <tbody id="scheduleBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="summaryView" class="view">
+            <div id="summaryGrid" class="summary-grid"></div>
+          </div>
+
+          <div id="issuesView" class="view">
+            <div id="issuesList" class="issues-list"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <template id="doctorTemplate">
+      <article class="doctor-card">
+        <div class="doctor-card-header">
+          <label class="doctor-name-label">
+            氏名
+            <input class="doctor-name" type="text" placeholder="例: 佐藤" />
+          </label>
+          <div class="doctor-card-actions">
+            <button class="secondary-action doctor-move move-doctor-up" type="button">上へ</button>
+            <button class="secondary-action doctor-move move-doctor-down" type="button">下へ</button>
+            <button class="icon-button danger remove-doctor" type="button" title="削除" aria-label="削除">×</button>
+          </div>
+        </div>
+        <div class="doctor-card-grid">
+          <label>
+            グループ
+            <select class="doctor-group">
+              <option value="A">Aグループ</option>
+              <option value="B">Bグループ</option>
+            </select>
+          </label>
+        </div>
+        <fieldset class="weekday-fieldset">
+          <legend>入れない曜日</legend>
+          <label class="weekday-option"><input class="doctor-weekday" type="checkbox" value="1" />月</label>
+          <label class="weekday-option"><input class="doctor-weekday" type="checkbox" value="2" />火</label>
+          <label class="weekday-option"><input class="doctor-weekday" type="checkbox" value="3" />水</label>
+          <label class="weekday-option"><input class="doctor-weekday" type="checkbox" value="4" />木</label>
+          <label class="weekday-option"><input class="doctor-weekday" type="checkbox" value="5" />金</label>
+          <label class="weekday-option"><input class="doctor-weekday" type="checkbox" value="6" />土</label>
+          <label class="weekday-option"><input class="doctor-weekday" type="checkbox" value="0" />日</label>
+        </fieldset>
+        <div class="ng-editor">
+          <div class="ng-input-row">
+            <label>
+              NG日
+              <input class="doctor-unavailable-date" type="date" />
+            </label>
+            <button class="secondary-action add-ng-date" type="button">追加</button>
+          </div>
+          <div class="ng-chip-list"></div>
+          <label>
+            まとめて入力
+            <textarea class="doctor-unavailable" rows="2" placeholder="2026-05-07, 2026.5.11"></textarea>
+          </label>
+        </div>
+      </article>
+    </template>
+
+    <script src="./app-part1.js?v=20260506-github-pages"></script>
+    <script src="./app-part2.js?v=20260506-github-pages"></script>
+    <script src="./app-part3.js?v=20260506-github-pages"></script>
+    <script src="./app-part4.js?v=20260506-github-pages"></script>
+    <script src="./app-part5.js?v=20260506-github-pages"></script>
+    <script src="./app-part6.js?v=20260506-github-pages"></script>
+    <script src="./app-part7.js?v=20260506-github-pages"></script>
+    <script src="./app-part8.js?v=20260506-github-pages"></script>
+  </body>
+</html>
